@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
 import './App.css';
+import Navbar from './components/Nav/Navbar';
+import Search from './components/Nav/Search';
+import NumResult from './components/Nav/NumResult';
+import Main from './components/Main/Main';
 
 const apiUrl = 'https://api.jikan.moe/v4/anime';
 
@@ -8,18 +12,27 @@ export default function App() {
   const [selectedAnime, setSelectedAnime] = useState(null);
   const [query, setQuery] = useState('');
   const [summerAnimes, setSummerAnimes] = useState([]);
-  const [selectedSTAnime, setSelectedSTAnime] = useState(null);
+  
   const [topAiringAnime, setTopAiringAnime] = useState([]);
   const [upcomingAnime, setUpcomingAnime] = useState([])
   
 
   useEffect(() => {
-    retryFetch(fetchSummerAnimes);
-    setTimeout(() => retryFetch(fetchTopAiringAnime), 1000);
-    setTimeout(() => retryFetch(fetchUpcomingAnime), 2000);
+    async function fetchAllData() {
+      await retryFetch(fetchSummerAnimes);
+      await delay(2000);  // Jeda 2 detik sebelum fetch berikutnya
+      await retryFetch(fetchTopAiringAnime);
+      await delay(2000);  // Jeda 2 detik sebelum fetch berikutnya
+      await retryFetch(fetchUpcomingAnime);
+    }
+    fetchAllData();
   }, []);
-
-  async function retryFetch(fetchFunction, retryCount = 10, retryDelay = 1000) {
+  
+  function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+  
+  async function retryFetch(fetchFunction, retryCount = 5, retryDelay = 1000) {
     let attempt = 0;
     while (attempt < retryCount) {
       try {
@@ -29,13 +42,13 @@ export default function App() {
         console.error(`Error fetching data, attempt ${attempt + 1}:`, error);
         attempt++;
         if (attempt < retryCount) {
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          const exponentialDelay = retryDelay * Math.pow(2, attempt);
+          await new Promise(resolve => setTimeout(resolve, exponentialDelay));
         }
       }
     }
     console.error('Failed to fetch data after multiple attempts');
   }
-
 
   async function fetchAnimes(searchQuery) {
     try {
@@ -47,29 +60,74 @@ export default function App() {
     }
   }
 
+  
+  async function fetchAllAnimeData() {
+    const results = await Promise.allSettled([
+      retryFetch(fetchSummerAnimes),
+      retryFetch(fetchTopAiringAnime),
+      retryFetch(fetchUpcomingAnime)
+    ]);
+  
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        console.log(`Fetch ${index + 1} succeeded`);
+      } else {
+        console.error(`Fetch ${index + 1} failed:`, result.reason);
+      }
+    });
+  }
+  
+  useEffect(() => {
+    fetchAllAnimeData();
+  }, []);
+  
   async function fetchSummerAnimes() {
     try {
       const response = await fetch('https://api.jikan.moe/v4/seasons/2024/summer');
+      if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
       const data = await response.json();
-      setSummerAnimes(data.data);
+      if (data.data) {
+        setSummerAnimes(data.data);
+      } else {
+        throw new Error('Invalid data structure');
+      }
     } catch (error) {
       console.error('Error fetching summer animes:', error);
     }
   }
-
+  
   async function fetchTopAiringAnime() {
-    const response = await fetch('https://api.jikan.moe/v4/top/anime?filter=airing');
-    const data = await response.json();
-    console.log("Fetched top airing anime:", data.data); // Debug log
-    setTopAiringAnime(data.data);
+    try {
+      const response = await fetch('https://api.jikan.moe/v4/top/anime?filter=airing');
+      if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+      const data = await response.json();
+      if (data.data) {
+        setTopAiringAnime(data.data);
+      } else {
+        throw new Error('Invalid data structure');
+      }
+    } catch (error) {
+      console.error('Error fetching top airing anime:', error);
+    }
   }
-
+  
   async function fetchUpcomingAnime() {
-    const response = await fetch('https://api.jikan.moe/v4/top/anime?filter=upcoming');
-    const data = await response.json();
-    console.log("Fetched top upcoming anime:", data.data); // Debug log
-    setUpcomingAnime(data.data);
+    try {
+      const response = await fetch('https://api.jikan.moe/v4/top/anime?filter=upcoming');
+      if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+      const data = await response.json();
+      if (data.data) {
+        setUpcomingAnime(data.data);
+      } else {
+        throw new Error('Invalid data structure');
+      }
+    } catch (error) {
+      console.error('Error fetching upcoming anime:', error);
+    }
   }
+  
+  
+  
 
   function handleSearch(e) {
     e.preventDefault(); // Mencegah submit form default
@@ -83,13 +141,17 @@ export default function App() {
   function handleSelectedAnime(id) {
     const newAnime = animes.find((anime) => anime.mal_id === id);
     setSelectedAnime(newAnime);
+    const modal = new bootstrap.Modal(document.getElementById('animeDetailModal'));
+    modal.show();
   }
 
   function handleSelectedSTAnime(id) {
     const newAnime = summerAnimes.find((anime) => anime.mal_id === id) ||
                      topAiringAnime.find((anime) => anime.mal_id === id) ||
                      upcomingAnime.find((anime) => anime.mal_id === id)
-    setSelectedSTAnime(newAnime);
+    setSelectedAnime(newAnime);
+    const modal = new bootstrap.Modal(document.getElementById('animeDetailModal'));
+    modal.show();
   }
 
   return (
@@ -104,9 +166,11 @@ export default function App() {
           <Box>
             <AnimeList animes={animes} onSelectedAnime={handleSelectedAnime} />
           </Box>
-          <Box>
-            {selectedAnime && <AnimeDetail anime={selectedAnime} />}
-          </Box>
+          {selectedAnime && (
+          <ModalBox >
+            <AnimeDetail anime={selectedAnime} />
+          </ModalBox>
+        )}
         </Main>
       )}
       <Main>
@@ -119,61 +183,14 @@ export default function App() {
         <Box>
           <UpcomingAnimeList animes={upcomingAnime} onSelectedAnime={handleSelectedSTAnime} />
         </Box>
-        <Box>
-          {selectedSTAnime && <AnimeDetail anime={selectedSTAnime} />}
-        </Box>
-        
+        {selectedAnime && (
+          <ModalBox >
+            <AnimeDetail anime={selectedAnime} />
+          </ModalBox>
+        )}
       </Main>
     </>
   );
-}
-
-function Navbar({ children }) {
-  return (
-    <nav className="nav-bar">
-      <Logo />
-      {children}
-    </nav>
-  );
-}
-
-function Logo() {
-  return (
-    <div className="logo">
-      <span role="img">🍥</span>
-      <h1>RizzNime</h1>
-      <span role="img">🍥</span>
-    </div>
-  );
-}
-
-function Search({ query, setQuery, handleSearch, children }) {
-  return (
-    <div className="search-container">
-      <form onSubmit={handleSearch}>
-        <input
-          className="search"
-          type="text"
-          placeholder="Search anime..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-      </form>
-      {children}
-    </div>
-  );
-}
-
-function NumResult({ animes }) {
-  return (
-    <p className="search-results">
-      Found <strong>{animes.length}</strong> results
-    </p>
-  );
-}
-
-function Main({ children }) {
-  return <main className="main">{children}</main>;
 }
 
 function Box({ children }) {
@@ -188,8 +205,37 @@ function Box({ children }) {
     </div>
   );
 }
+function ModalBox({ children }) {
+  return (
+    <div className="modal fade" id="animeDetailModal" tabIndex="-1" aria-labelledby="animeDetailModalLabel" aria-hidden="true">
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title" id="animeDetailModalLabel">Anime Details</h5>
+            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div className="modal-body">
+            {children}
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-dark" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function SummerAnimeList({ animes, onSelectedAnime }) {
+  if (!animes || animes.length === 0) {
+    return <div id="loading"><div className="loading-wave">
+    <div className="loading-bar"></div>
+    <div className="loading-bar"></div>
+    <div className="loading-bar"></div>
+    <div className="loading-bar"></div>
+  </div></div>
+  }
+
   return (
     <div className="summer-anime-list">
       <h2>Summer Anime 2024</h2>
@@ -204,7 +250,12 @@ function SummerAnimeList({ animes, onSelectedAnime }) {
 
 function TopAiringAnimeList({ animes, onSelectedAnime }) {
   if (!animes || animes.length === 0) {
-    return <p>Loading...</p>;
+    return <div id="loading"><div className="loading-wave">
+    <div className="loading-bar"></div>
+    <div className="loading-bar"></div>
+    <div className="loading-bar"></div>
+    <div className="loading-bar"></div>
+  </div></div>
   }
 
   return (
@@ -221,7 +272,13 @@ function TopAiringAnimeList({ animes, onSelectedAnime }) {
 
 function UpcomingAnimeList({animes, onSelectedAnime}){
   if (!animes || animes.length === 0){
-    return <p>Loading...</p>;
+    return <div id="loading"><div className="loading-wave">
+    <div className="loading-bar"></div>
+    <div className="loading-bar"></div>
+    <div className="loading-bar"></div>
+    <div className="loading-bar"></div>
+  </div></div>
+  ;
   }
 
   return (
@@ -288,7 +345,7 @@ function AnimeDetail({ anime }) {
             Episodes: {anime.episodes || 'Unknown'}
           </p>
           <p>
-            Themes: {anime.themes && anime.themes.length > 0 ? anime.themes.map((theme) => theme.name).join(', ') : 'Unknown'}
+            Themes: {anime.themes.map((theme) => theme.name).join(', ') || 'Unknown'}
           </p>
         </div>
       </header>
