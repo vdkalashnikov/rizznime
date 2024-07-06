@@ -4,19 +4,23 @@ import Navbar from './components/Nav/Navbar';
 import Search from './components/Nav/Search';
 import NumResult from './components/Nav/NumResult';
 import Main from './components/Main/Main';
+import ModalBox from './components/Main/ModalBox';
+import Box from './components/Main/Box';
+import AnimeDetail from './components/Main/AnimeDetail';
+import AnimeList from './components/Main/AnimeList';
+
 
 const apiUrl = 'https://api.jikan.moe/v4/anime';
 
 export default function App() {
-  const [animes, setAnimes] = useState([]);
-  const [selectedAnime, setSelectedAnime] = useState(null);
-  const [query, setQuery] = useState('');
-  const [summerAnimes, setSummerAnimes] = useState([]);
-  
-  const [topAiringAnime, setTopAiringAnime] = useState([]);
+  const [animes, setAnimes] = useState([])
+  const [selectedAnime, setSelectedAnime] = useState(null)
+  const [query, setQuery] = useState('')
+  const [summerAnimes, setSummerAnimes] = useState([])
+  const [topAiringAnime, setTopAiringAnime] = useState([])
   const [upcomingAnime, setUpcomingAnime] = useState([])
+  const [mostPopularAnime, setMostPopularAnime] = useState([])
   
-
   useEffect(() => {
     async function fetchAllData() {
       await retryFetch(fetchSummerAnimes);
@@ -24,6 +28,8 @@ export default function App() {
       await retryFetch(fetchTopAiringAnime);
       await delay(2000);  // Jeda 2 detik sebelum fetch berikutnya
       await retryFetch(fetchUpcomingAnime);
+      await delay(2000)
+      await retryFetch(fetchMostPopularAnime)
     }
     fetchAllData();
   }, []);
@@ -65,7 +71,8 @@ export default function App() {
     const results = await Promise.allSettled([
       retryFetch(fetchSummerAnimes),
       retryFetch(fetchTopAiringAnime),
-      retryFetch(fetchUpcomingAnime)
+      retryFetch(fetchUpcomingAnime),
+      retryFetch(fetchMostPopularAnime)
     ]);
   
     results.forEach((result, index) => {
@@ -125,18 +132,36 @@ export default function App() {
       console.error('Error fetching upcoming anime:', error);
     }
   }
-  
-  
-  
 
-  function handleSearch(e) {
-    e.preventDefault(); // Mencegah submit form default
-    if (query.trim()) {
-      fetchAnimes(query);
-    } else {
-      setAnimes([]);
+  async function fetchMostPopularAnime(){
+    try{
+      const response = await fetch('https://api.jikan.moe/v4/top/anime?filter=bypopularity')
+      if(!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`)
+        const data = await response.json()
+      if (data.data) {
+        setMostPopularAnime(data.data)
+      } else {
+        throw new Error('Invalid data structure')
+      }
+    } catch (error) {
+      console.error('Error fetching upcoming anime:', error)
     }
   }
+  
+  function handleSearch(e) {
+    e.preventDefault() // Mencegah submit form default
+    if (query.trim()) {
+      fetchAnimes(query)
+    } else {
+      setAnimes([])
+    }
+  }
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setAnimes([])
+    }
+  }, [query])
 
   function handleSelectedAnime(id) {
     const newAnime = animes.find((anime) => anime.mal_id === id);
@@ -148,7 +173,8 @@ export default function App() {
   function handleSelectedSTAnime(id) {
     const newAnime = summerAnimes.find((anime) => anime.mal_id === id) ||
                      topAiringAnime.find((anime) => anime.mal_id === id) ||
-                     upcomingAnime.find((anime) => anime.mal_id === id)
+                     upcomingAnime.find((anime) => anime.mal_id === id) ||
+                     mostPopularAnime.find((anime) => anime.mal_id === id)
     setSelectedAnime(newAnime);
     const modal = new bootstrap.Modal(document.getElementById('animeDetailModal'));
     modal.show();
@@ -164,7 +190,7 @@ export default function App() {
       {animes.length > 0 && (
         <Main>
           <Box>
-            <AnimeList animes={animes} onSelectedAnime={handleSelectedAnime} />
+            <AnimeList title="Search Result" animes={animes} onSelectedAnime={handleSelectedAnime} />
           </Box>
           {selectedAnime && (
           <ModalBox >
@@ -175,13 +201,16 @@ export default function App() {
       )}
       <Main>
         <Box>
-          <SummerAnimeList animes={summerAnimes} onSelectedAnime={handleSelectedSTAnime} />
+          <AnimeList title="Summer Anime" animes={summerAnimes} onSelectedAnime={handleSelectedSTAnime} />
         </Box>
         <Box>
-          <TopAiringAnimeList animes={topAiringAnime} onSelectedAnime={handleSelectedSTAnime} />
+          <AnimeList title="Top Airing Anime" animes={topAiringAnime} onSelectedAnime={handleSelectedSTAnime} />
         </Box>
         <Box>
-          <UpcomingAnimeList animes={upcomingAnime} onSelectedAnime={handleSelectedSTAnime} />
+          <AnimeList title="Upcoming Anime" animes={upcomingAnime} onSelectedAnime={handleSelectedSTAnime} />
+        </Box>
+        <Box>
+          <AnimeList title="Most Popular Anime" animes={mostPopularAnime} onSelectedAnime={handleSelectedSTAnime} />
         </Box>
         {selectedAnime && (
           <ModalBox >
@@ -193,167 +222,25 @@ export default function App() {
   );
 }
 
-function Box({ children }) {
-  const [isOpen, setIsOpen] = useState(true);
+// function SummerAnimeList({ animes, onSelectedAnime }) {
+//   if (!animes || animes.length === 0) {
+//     return <div id="loading"><div className="loading-wave">
+//     <div className="loading-bar"></div>
+//     <div className="loading-bar"></div>
+//     <div className="loading-bar"></div>
+//     <div className="loading-bar"></div>
+//   </div></div>
+//   }
 
-  return (
-    <div className="box">
-      <button className="btn-toggle" onClick={() => setIsOpen((open) => !open)}>
-        {isOpen ? '–' : '+'}
-      </button>
-      {isOpen && children}
-    </div>
-  );
-}
-function ModalBox({ children }) {
-  return (
-    <div className="modal fade" id="animeDetailModal" tabIndex="-1" aria-labelledby="animeDetailModalLabel" aria-hidden="true">
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title" id="animeDetailModalLabel">Anime Details</h5>
-            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div className="modal-body">
-            {children}
-          </div>
-          <div className="modal-footer">
-            <button type="button" className="btn btn-dark" data-bs-dismiss="modal">Close</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+//   return (
+//     <div className="summer-anime-list">
+//       <h2>Summer Anime 2024</h2>
+//       <ul className="list list-anime">
+//         {animes.map((anime) => (
+//           <Anime key={anime.mal_id} anime={anime} onSelectedAnime={onSelectedAnime} />
+//         ))}
+//       </ul>
+//     </div>
+//   );
+// }
 
-function SummerAnimeList({ animes, onSelectedAnime }) {
-  if (!animes || animes.length === 0) {
-    return <div id="loading"><div className="loading-wave">
-    <div className="loading-bar"></div>
-    <div className="loading-bar"></div>
-    <div className="loading-bar"></div>
-    <div className="loading-bar"></div>
-  </div></div>
-  }
-
-  return (
-    <div className="summer-anime-list">
-      <h2>Summer Anime 2024</h2>
-      <ul className="list list-anime">
-        {animes.map((anime) => (
-          <Anime key={anime.mal_id} anime={anime} onSelectedAnime={onSelectedAnime} />
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function TopAiringAnimeList({ animes, onSelectedAnime }) {
-  if (!animes || animes.length === 0) {
-    return <div id="loading"><div className="loading-wave">
-    <div className="loading-bar"></div>
-    <div className="loading-bar"></div>
-    <div className="loading-bar"></div>
-    <div className="loading-bar"></div>
-  </div></div>
-  }
-
-  return (
-    <div className="top-airing-anime-list">
-      <h2>Top Airing Anime</h2>
-      <ul className="list list-anime">
-        {animes.map((anime) => (
-          <Anime key={anime.mal_id} anime={anime} onSelectedAnime={onSelectedAnime} />
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function UpcomingAnimeList({animes, onSelectedAnime}){
-  if (!animes || animes.length === 0){
-    return <div id="loading"><div className="loading-wave">
-    <div className="loading-bar"></div>
-    <div className="loading-bar"></div>
-    <div className="loading-bar"></div>
-    <div className="loading-bar"></div>
-  </div></div>
-  ;
-  }
-
-  return (
-    <div className='upcoming-anime-list'>
-      <h2>Top Upcoming Anime</h2>
-      <ul className='list list-anime'>
-        {animes.map((anime) => (
-        <Anime key={anime.mal_id} anime={anime} onSelectedAnime={onSelectedAnime} />
-        ))}
-      </ul>
-    </div>
-  )
-}
-
-function AnimeList({ animes, onSelectedAnime }) {
-  return (
-    <div className="anime-list">
-      <h2>Hasil Pencarian</h2>
-      <ul className="list list-anime">
-        {animes?.map((anime) => (
-          <Anime key={anime.mal_id} anime={anime} onSelectedAnime={onSelectedAnime} />
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function Anime({ anime, onSelectedAnime }) {
-  return (
-    <li onClick={() => onSelectedAnime(anime.mal_id)}>
-      <img src={anime.images?.jpg?.image_url} alt={`${anime.title} cover`} />
-      <h3>{anime.title}</h3>
-      <div>
-        <p>
-          <span>{anime.aired?.prop?.from?.year || 'Unknown'}</span>
-        </p>
-      </div>
-    </li>
-  );
-}
-
-function AnimeDetail({ anime }) {
-  if (!anime) return null;
-
-  const imageUrl = anime.images?.jpg?.image_url;
-
-  return (
-    <div className="details">
-      <header>
-        {imageUrl ? (
-          <img src={imageUrl} alt={`${anime.title} cover`} />
-        ) : (
-          <p>No image available</p>
-        )}
-        <div className="details-overview">
-          <h2>{anime.title}</h2>
-          <p>
-            {anime.aired?.prop?.from?.year || 'Unknown year'} &bull; {anime.score || 'No score'}
-          </p>
-          <p>
-            Genres: {anime.genres && anime.genres.length > 0 ? anime.genres.map((genre) => genre.name).join(', ') : 'Unknown'}
-          </p>
-          <p>
-            Episodes: {anime.episodes || 'Unknown'}
-          </p>
-          <p>
-            Themes: {anime.themes.map((theme) => theme.name).join(', ') || 'Unknown'}
-          </p>
-        </div>
-      </header>
-      <section>
-        <p>
-          <em>{anime.synopsis || 'No synopsis available'}</em>
-        </p>
-      </section>
-    </div>
-  );
-}
