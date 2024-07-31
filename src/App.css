@@ -28,6 +28,31 @@
   background-color: transparent;
 }
 
+@font-face {
+  font-family: 'AOTfont';
+  src: url('./assets/fonts/Ditty.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Narutofont';
+  src: url('./assets/fonts/ninja-naruto.regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Beastarsfont';
+  src: url('./assets/fonts/beastars.otf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Haikyufont';
+  src: url('./assets/fonts/dimitri.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -63,6 +88,7 @@ body {
   justify-content: center;
   align-items: center;
   padding: 2rem;
+  gap: 1rem;
 }
 
 .nav-bar .logo span {
@@ -70,9 +96,11 @@ body {
 }
 
 .nav-bar .logo h1 {
-  font-size: 2.6rem;
+  font-size: 3rem;
   font-weight: 600;
   color: #fff;
+  font-family: 'Beastarsfont';
+  
 }
 
 .nav-bar .search-container {
@@ -126,6 +154,35 @@ body {
   
 }
 
+.main2{
+  margin-top: 2.4rem;
+  max-height: calc(100vh - 12rem - 3 * 5rem);
+  /* max-height: 600px; */
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 2.4rem;
+}
+.main2 .box {
+  /* width: 42rem; */
+  flex-grow: 1;
+  flex-basis: 33rem;
+  max-width: 33rem;
+  min-height: 5rem;
+  max-height: 46rem;
+  background-color: var(--color-background-100);
+  border-radius: 1rem;
+  overflow: scroll;
+  position: relative;
+
+  /* transition-property: transform;
+  transition-duration: 0.3s;
+  transition-timing-function: ease;
+  transition-delay: 0s; */
+
+  transition: transform 0.3s;
+}
+
 .main .box {
   /* width: 42rem; */
   flex-grow: 1;
@@ -151,6 +208,11 @@ body {
 }
 
 .main .box h2{
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 2.4rem;
+}
+.main2 .box h2{
   text-align: center;
   margin-top: 1rem;
   font-size: 2.4rem;
@@ -305,6 +367,10 @@ body {
   color: rgb(238, 236, 236);
 }
 
+#logo1{
+  width: 48px;
+}
+
 
 #loading{
   display: flex;
@@ -329,6 +395,12 @@ body {
   background-color: #3498db;
   border-radius: 5px;
   animation: loading-wave-animation 1s ease-in-out infinite;
+}
+
+.modal-img{
+  display: flex;
+  gap: 2rem;
+  align-items: center;
 }
 
 .loading-bar:nth-child(2) {
@@ -473,7 +545,25 @@ body {
   }
 } */
 
-
+@media (max-width: 1600px){
+  .main2 {
+    margin-top: 2.4rem;
+    /* max-height: calc(100vh - 12rem - 3 * 5rem); */
+    max-height: 600px;
+    display: flex;
+    justify-content: center;
+    gap: 2.4rem;
+  }
+  .main2 .box {
+    
+    max-width: 33rem;
+    min-height: 30rem;
+    background-color: var(--color-background-100);
+    border-radius: 1rem;
+    overflow: scroll;
+    position: relative;
+  }
+}
 
 
 @media (max-width:1460px){
@@ -906,6 +996,25 @@ body {
     overflow: scroll;
     position: relative;
   }
+  .main2 {
+    margin-top: 2.4rem;
+    /* max-height: calc(100vh - 12rem - 3 * 5rem); */
+    max-height: 600px;
+    display: flex;
+    justify-content: center;
+   flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .main2 .box {
+    
+    max-width: 45rem;
+    width: 100%;
+    min-height: 30rem;
+    background-color: var(--color-background-100);
+    border-radius: 1rem;
+    overflow: scroll;
+    position: relative;
+  }
 }
 @media (max-width:325px){
   body{
@@ -929,6 +1038,26 @@ body {
     gap: 1rem;
   }
   .main .box {
+    
+    max-width: 28rem;
+    width: 100%;
+    min-width: 10rem;
+    min-height: 30rem;
+    background-color: var(--color-background-100);
+    border-radius: 1rem;
+    overflow: scroll;
+    position: relative;
+  }
+  .main2 {
+    margin-top: 2.4rem;
+    /* max-height: calc(100vh - 12rem - 3 * 5rem); */
+    max-height: 600px;
+    display: flex;
+    justify-content: center;
+   flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .main2 .box {
     
     max-width: 28rem;
     width: 100%;

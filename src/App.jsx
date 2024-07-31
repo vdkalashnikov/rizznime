@@ -8,6 +8,7 @@ import ModalBox from './components/Main/ModalBox';
 import Box from './components/Main/Box';
 import AnimeDetail from './components/Main/AnimeDetail';
 import AnimeList from './components/Main/AnimeList';
+import FirstMain from './components/Main/FirstMain';
 
 
 const apiUrl = 'https://api.jikan.moe/v4/anime';
@@ -24,11 +25,11 @@ export default function App() {
   useEffect(() => {
     async function fetchAllData() {
       await retryFetch(fetchSummerAnimes);
-      await delay(2000);  // Jeda 2 detik sebelum fetch berikutnya
+      await delay(1200);  
       await retryFetch(fetchTopAiringAnime);
-      await delay(2000);  // Jeda 2 detik sebelum fetch berikutnya
+      await delay(1200);  
       await retryFetch(fetchUpcomingAnime);
-      await delay(2000)
+      await delay(1200)
       await retryFetch(fetchMostPopularAnime)
     }
     fetchAllData();
@@ -60,7 +61,16 @@ export default function App() {
     try {
       const response = await fetch(`${apiUrl}?q=${searchQuery}`);
       const data = await response.json();
-      setAnimes(data.data);
+      if (data.data) {
+        const animePromises = data.data.map(async (anime) => {
+          const characters = await fetchAnimeCharacters(anime.mal_id);
+          return { ...anime, characters };
+        });
+        const animeWithCharacters = await Promise.all(animePromises);
+        setAnimes(animeWithCharacters);
+      } else {
+        throw new Error('Invalid data structure');
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -89,19 +99,24 @@ export default function App() {
   }, []);
   
   async function fetchSummerAnimes() {
-    try {
-      const response = await fetch('https://api.jikan.moe/v4/seasons/2024/summer');
-      if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
-      const data = await response.json();
-      if (data.data) {
-        setSummerAnimes(data.data);
-      } else {
-        throw new Error('Invalid data structure');
-      }
-    } catch (error) {
-      console.error('Error fetching summer animes:', error);
+  try {
+    const response = await fetch('https://api.jikan.moe/v4/seasons/2024/summer');
+    if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+    const data = await response.json();
+    if (data.data) {
+      const animePromises = data.data.map(async (anime) => {
+        const characters = await fetchAnimeCharacters(anime.mal_id);
+        return { ...anime, characters };
+      });
+      const animeWithCharacters = await Promise.all(animePromises);
+      setSummerAnimes(animeWithCharacters);
+    } else {
+      throw new Error('Invalid data structure');
     }
+  } catch (error) {
+    console.error('Error fetching summer animes:', error);
   }
+}
   
   async function fetchTopAiringAnime() {
     try {
@@ -109,7 +124,15 @@ export default function App() {
       if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
       const data = await response.json();
       if (data.data) {
-        setTopAiringAnime(data.data);
+        const animeWithCharacters = [];
+        for (const anime of data.data) {
+          await retryFetch(async () => {
+            const characters = await fetchAnimeCharacters(anime.mal_id);
+            animeWithCharacters.push({ ...anime, characters });
+          });
+          await delay(1000);
+        }
+        setTopAiringAnime(animeWithCharacters);
       } else {
         throw new Error('Invalid data structure');
       }
@@ -124,7 +147,15 @@ export default function App() {
       if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
       const data = await response.json();
       if (data.data) {
-        setUpcomingAnime(data.data);
+        const animeWithCharacters = [];
+        for (const anime of data.data) {
+          await retryFetch(async () => {
+            const characters = await fetchAnimeCharacters(anime.mal_id);
+            animeWithCharacters.push({ ...anime, characters });
+          });
+          await delay(1000); 
+        }
+        setUpcomingAnime(animeWithCharacters);
       } else {
         throw new Error('Invalid data structure');
       }
@@ -139,12 +170,32 @@ export default function App() {
       if(!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`)
         const data = await response.json()
       if (data.data) {
-        setMostPopularAnime(data.data)
+        const animeWithCharacters = [];
+        for (const anime of data.data) {
+          await retryFetch(async () => {
+            const characters = await fetchAnimeCharacters(anime.mal_id);
+            animeWithCharacters.push({ ...anime, characters });
+          });
+          await delay(1000);
+        }
+        setMostPopularAnime(animeWithCharacters);
       } else {
-        throw new Error('Invalid data structure')
+        throw new Error('Invalid data structure');
       }
     } catch (error) {
       console.error('Error fetching upcoming anime:', error)
+    }
+  }
+
+  async function fetchAnimeCharacters(malId) {
+    try {
+      const response = await fetch(`https://api.jikan.moe/v4/anime/${malId}/characters`);
+      if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      console.error(`Error fetching characters for anime ${malId}:`, error);
+      return null;
     }
   }
   
@@ -188,7 +239,7 @@ export default function App() {
         </Search>
       </Navbar>
       {animes.length > 0 && (
-        <Main>
+        <FirstMain>
           <Box>
             <AnimeList title="Search Result" animes={animes} onSelectedAnime={handleSelectedAnime} />
           </Box>
@@ -197,7 +248,7 @@ export default function App() {
             <AnimeDetail anime={selectedAnime} />
           </ModalBox>
         )}
-        </Main>
+        </FirstMain>
       )}
       <Main>
         <Box>
