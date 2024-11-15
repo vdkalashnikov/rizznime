@@ -13,8 +13,8 @@ export default function AnimeList({ title ,animes, onSelectedAnime }) {
       <div className="anime-list">
         <h2>{title}</h2>
         <ul className="list list-anime">
-          {animes?.map((anime) => (
-            <Anime key={anime.mal_id} anime={anime} onSelectedAnime={onSelectedAnime} />
+          {animes?.map((anime, index) => (
+            <Anime key={index} anime={anime} onSelectedAnime={onSelectedAnime} />
           ))}
         </ul>
       </div>

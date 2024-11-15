@@ -1,44 +1,43 @@
-import { useState, useEffect } from 'react';
-import './App.css';
-import Navbar from './components/Nav/Navbar';
-import Search from './components/Nav/Search';
-import NumResult from './components/Nav/NumResult';
-import Main from './components/Main/Main';
-import ModalBox from './components/Main/ModalBox';
-import Box from './components/Main/Box';
-import AnimeDetail from './components/Main/AnimeDetail';
-import AnimeList from './components/Main/AnimeList';
-import FirstMain from './components/Main/FirstMain';
+import { useState, useEffect } from "react";
+import "./App.css";
+import Navbar from "./components/Nav/Navbar";
+import Search from "./components/Nav/Search";
+import NumResult from "./components/Nav/NumResult";
+import Main from "./components/Main/Main";
+import ModalBox from "./components/Main/ModalBox";
+import Box from "./components/Main/Box";
+import AnimeDetail from "./components/Main/AnimeDetail";
+import AnimeList from "./components/Main/AnimeList";
+import FirstMain from "./components/Main/FirstMain";
 
-
-const apiUrl = 'https://api.jikan.moe/v4/anime';
+const apiUrl = "https://api.jikan.moe/v4/anime";
 
 export default function App() {
-  const [animes, setAnimes] = useState([])
-  const [selectedAnime, setSelectedAnime] = useState(null)
-  const [query, setQuery] = useState('')
-  const [summerAnimes, setSummerAnimes] = useState([])
-  const [topAiringAnime, setTopAiringAnime] = useState([])
-  const [upcomingAnime, setUpcomingAnime] = useState([])
-  const [mostPopularAnime, setMostPopularAnime] = useState([])
-  
+  const [animes, setAnimes] = useState([]);
+  const [selectedAnime, setSelectedAnime] = useState(null);
+  const [query, setQuery] = useState("");
+  const [summerAnimes, setSummerAnimes] = useState([]);
+  const [topAiringAnime, setTopAiringAnime] = useState([]);
+  const [upcomingAnime, setUpcomingAnime] = useState([]);
+  const [mostPopularAnime, setMostPopularAnime] = useState([]);
+
   useEffect(() => {
     async function fetchAllData() {
       await retryFetch(fetchSummerAnimes);
-      await delay(1200);  
+      await delay(1200);
       await retryFetch(fetchTopAiringAnime);
-      await delay(1200);  
+      await delay(1200);
       await retryFetch(fetchUpcomingAnime);
-      await delay(1200)
-      await retryFetch(fetchMostPopularAnime)
+      await delay(1200);
+      await retryFetch(fetchMostPopularAnime);
     }
     fetchAllData();
   }, []);
-  
+
   function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
-  
+
   async function retryFetch(fetchFunction, retryCount = 5, retryDelay = 1000) {
     let attempt = 0;
     while (attempt < retryCount) {
@@ -50,11 +49,11 @@ export default function App() {
         attempt++;
         if (attempt < retryCount) {
           const exponentialDelay = retryDelay * Math.pow(2, attempt);
-          await new Promise(resolve => setTimeout(resolve, exponentialDelay));
+          await new Promise((resolve) => setTimeout(resolve, exponentialDelay));
         }
       }
     }
-    console.error('Failed to fetch data after multiple attempts');
+    console.error("Failed to fetch data after multiple attempts");
   }
 
   async function fetchAnimes(searchQuery) {
@@ -69,128 +68,121 @@ export default function App() {
         const animeWithCharacters = await Promise.all(animePromises);
         setAnimes(animeWithCharacters);
       } else {
-        throw new Error('Invalid data structure');
+        throw new Error("Invalid data structure");
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error("Error fetching data:", error);
     }
   }
 
-  
   async function fetchAllAnimeData() {
     const results = await Promise.allSettled([
       retryFetch(fetchSummerAnimes),
       retryFetch(fetchTopAiringAnime),
       retryFetch(fetchUpcomingAnime),
-      retryFetch(fetchMostPopularAnime)
+      retryFetch(fetchMostPopularAnime),
     ]);
-  
+
     results.forEach((result, index) => {
-      if (result.status === 'fulfilled') {
+      if (result.status === "fulfilled") {
         console.log(`Fetch ${index + 1} succeeded`);
       } else {
         console.error(`Fetch ${index + 1} failed:`, result.reason);
       }
     });
   }
-  
+
   useEffect(() => {
     fetchAllAnimeData();
   }, []);
-  
+
   async function fetchSummerAnimes() {
-  try {
-    const response = await fetch('https://api.jikan.moe/v4/seasons/2024/summer');
-    if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
-    const data = await response.json();
-    if (data.data) {
-      const animePromises = data.data.map(async (anime) => {
-        const characters = await fetchAnimeCharacters(anime.mal_id);
-        return { ...anime, characters };
-      });
-      const animeWithCharacters = await Promise.all(animePromises);
-      setSummerAnimes(animeWithCharacters);
-    } else {
-      throw new Error('Invalid data structure');
-    }
-  } catch (error) {
-    console.error('Error fetching summer animes:', error);
-  }
-}
-  
-  async function fetchTopAiringAnime() {
     try {
-      const response = await fetch('https://api.jikan.moe/v4/top/anime?filter=airing');
-      if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+      const response = await fetch(
+        "https://api.jikan.moe/v4/seasons/2024/summer"
+      );
+      if (!response.ok)
+        throw new Error(`Network response was not ok: ${response.statusText}`);
       const data = await response.json();
-      if (data.data) {
-        const animeWithCharacters = [];
-        for (const anime of data.data) {
-          await retryFetch(async () => {
-            const characters = await fetchAnimeCharacters(anime.mal_id);
-            animeWithCharacters.push({ ...anime, characters });
-          });
-          await delay(1000);
-        }
-        setTopAiringAnime(animeWithCharacters);
-      } else {
-        throw new Error('Invalid data structure');
-      }
+      // if (data.data) {
+      //   const animePromises = data.data.map(async (anime) => {
+      //     const characters = await fetchAnimeCharacters(anime.mal_id);
+      //     return { ...anime, characters };
+      //   });
+      //   const animeWithCharacters = await Promise.all(animePromises);
+      //   setSummerAnimes(animeWithCharacters);
+      // } else {
+      //   throw new Error('Invalid data structure');
+      // }
+      setSummerAnimes(data.data);
     } catch (error) {
-      console.error('Error fetching top airing anime:', error);
-    }
-  }
-  
-  async function fetchUpcomingAnime() {
-    try {
-      const response = await fetch('https://api.jikan.moe/v4/top/anime?filter=upcoming');
-      if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
-      const data = await response.json();
-      if (data.data) {
-        const animeWithCharacters = [];
-        for (const anime of data.data) {
-          await retryFetch(async () => {
-            const characters = await fetchAnimeCharacters(anime.mal_id);
-            animeWithCharacters.push({ ...anime, characters });
-          });
-          await delay(1000); 
-        }
-        setUpcomingAnime(animeWithCharacters);
-      } else {
-        throw new Error('Invalid data structure');
-      }
-    } catch (error) {
-      console.error('Error fetching upcoming anime:', error);
+      console.error("Error fetching summer animes:", error);
     }
   }
 
-  async function fetchMostPopularAnime(){
-    try{
-      const response = await fetch('https://api.jikan.moe/v4/top/anime?filter=bypopularity')
-      if(!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`)
-        const data = await response.json()
-      if (data.data) {
-        const animeWithCharacters = [];
-        for (const anime of data.data) {
-          await retryFetch(async () => {
-            const characters = await fetchAnimeCharacters(anime.mal_id);
-            animeWithCharacters.push({ ...anime, characters });
-          });
-          await delay(1000);
-        }
-        setMostPopularAnime(animeWithCharacters);
-      } else {
-        throw new Error('Invalid data structure');
-      }
+  async function fetchTopAiringAnime() {
+    try {
+      const response = await fetch(
+        "https://api.jikan.moe/v4/top/anime?filter=airing"
+      );
+      if (!response.ok)
+        throw new Error(`Network response was not ok: ${response.statusText}`);
+      const data = await response.json();
+      // if (data.data) {
+      //   const animeWithCharacters = [];
+      //   for (const anime of data.data) {
+      //     await retryFetch(async () => {
+      //       const characters = await fetchAnimeCharacters(anime.mal_id);
+      //       animeWithCharacters.push({ ...anime, characters });
+      //     });
+      //     await delay(1000);
+      //   }
+      //   setTopAiringAnime(animeWithCharacters);
+      // } else {
+      //   throw new Error('Invalid data structure');
+      // }
+      setTopAiringAnime(data.data);
     } catch (error) {
-      console.error('Error fetching upcoming anime:', error)
+      console.error("Error fetching top airing anime:", error);
+    }
+  }
+
+  async function fetchUpcomingAnime() {
+    try {
+      const response = await fetch(
+        "https://api.jikan.moe/v4/top/anime?filter=upcoming"
+      );
+      if (!response.ok)
+        throw new Error(`Network response was not ok: ${response.statusText}`);
+      const data = await response.json();
+      setUpcomingAnime(data.data);
+    } catch (error) {
+      console.error("Error fetching upcoming anime:", error);
+    }
+  }
+
+  async function fetchMostPopularAnime() {
+    try {
+      const response = await fetch(
+        "https://api.jikan.moe/v4/top/anime?filter=bypopularity"
+      );
+      if (!response.ok)
+        throw new Error(`Network response was not ok: ${response.statusText}`);
+      const data = await response.json();
+      setMostPopularAnime(data.data);
+      console.log(data);
+    } catch (error) {
+      console.error("Error fetching upcoming anime:", error);
     }
   }
 
   async function fetchAnimeCharacters(malId) {
     try {
-      const response = await fetch(`https://api.jikan.moe/v4/anime/${malId}/characters`);
-      if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+      const response = await fetch(
+        `https://api.jikan.moe/v4/anime/${malId}/characters`
+      );
+      if (!response.ok)
+        throw new Error(`Network response was not ok: ${response.statusText}`);
       const data = await response.json();
       return data.data;
     } catch (error) {
@@ -198,38 +190,50 @@ export default function App() {
       return null;
     }
   }
-  
+
   function handleSearch(e) {
-    e.preventDefault() // Mencegah submit form default
+    e.preventDefault(); // Mencegah submit form default
     if (query.trim()) {
-      fetchAnimes(query)
+      fetchAnimes(query);
     } else {
-      setAnimes([])
+      setAnimes([]);
     }
   }
 
   useEffect(() => {
     if (!query.trim()) {
-      setAnimes([])
+      setAnimes([]);
     }
-  }, [query])
+  }, [query]);
 
   function handleSelectedAnime(id) {
     const newAnime = animes.find((anime) => anime.mal_id === id);
     setSelectedAnime(newAnime);
-    const modal = new bootstrap.Modal(document.getElementById('animeDetailModal'));
+    const modal = new bootstrap.Modal(
+      document.getElementById("animeDetailModal")
+    );
     modal.show();
   }
 
-  function handleSelectedSTAnime(id) {
-    const newAnime = summerAnimes.find((anime) => anime.mal_id === id) ||
-                     topAiringAnime.find((anime) => anime.mal_id === id) ||
-                     upcomingAnime.find((anime) => anime.mal_id === id) ||
-                     mostPopularAnime.find((anime) => anime.mal_id === id)
-    setSelectedAnime(newAnime);
-    const modal = new bootstrap.Modal(document.getElementById('animeDetailModal'));
-    modal.show();
+  async function handleSelectedSTAnime(id) {
+    const newAnime =
+      summerAnimes.find((anime) => anime.mal_id === id) ||
+      topAiringAnime.find((anime) => anime.mal_id === id) ||
+      upcomingAnime.find((anime) => anime.mal_id === id) ||
+      mostPopularAnime.find((anime) => anime.mal_id === id);
+    const response = await fetchAnimeCharacters(id);
+    console.log(response);
+    if (response.length > 0) {
+      const animeWithCharacters = { ...newAnime, characters: response };
+      setSelectedAnime(animeWithCharacters);
+      const modal = new bootstrap.Modal(
+        document.getElementById("animeDetailModal")
+      );
+      modal.show();
+    }
   }
+
+  useEffect(() => console.log(selectedAnime), [selectedAnime]);
 
   return (
     <>
@@ -241,30 +245,50 @@ export default function App() {
       {animes.length > 0 && (
         <FirstMain>
           <Box>
-            <AnimeList title="Search Result" animes={animes} onSelectedAnime={handleSelectedAnime} />
+            <AnimeList
+              title="Search Result"
+              animes={animes}
+              onSelectedAnime={handleSelectedAnime}
+            />
           </Box>
           {selectedAnime && (
-          <ModalBox >
-            <AnimeDetail anime={selectedAnime} />
-          </ModalBox>
-        )}
+            <ModalBox>
+              <AnimeDetail anime={selectedAnime} />
+            </ModalBox>
+          )}
         </FirstMain>
       )}
       <Main>
         <Box>
-          <AnimeList title="Summer Anime" animes={summerAnimes} onSelectedAnime={handleSelectedSTAnime} />
+          <AnimeList
+            title="Summer Anime"
+            animes={summerAnimes}
+            onSelectedAnime={handleSelectedSTAnime}
+          />
         </Box>
         <Box>
-          <AnimeList title="Top Airing Anime" animes={topAiringAnime} onSelectedAnime={handleSelectedSTAnime} />
+          <AnimeList
+            title="Top Airing Anime"
+            animes={topAiringAnime}
+            onSelectedAnime={handleSelectedSTAnime}
+          />
         </Box>
         <Box>
-          <AnimeList title="Upcoming Anime" animes={upcomingAnime} onSelectedAnime={handleSelectedSTAnime} />
+          <AnimeList
+            title="Upcoming Anime"
+            animes={upcomingAnime}
+            onSelectedAnime={handleSelectedSTAnime}
+          />
         </Box>
         <Box>
-          <AnimeList title="Most Popular Anime" animes={mostPopularAnime} onSelectedAnime={handleSelectedSTAnime} />
+          <AnimeList
+            title="Most Popular Anime"
+            animes={mostPopularAnime}
+            onSelectedAnime={handleSelectedSTAnime}
+          />
         </Box>
         {selectedAnime && (
-          <ModalBox >
+          <ModalBox>
             <AnimeDetail anime={selectedAnime} />
           </ModalBox>
         )}
@@ -294,4 +318,3 @@ export default function App() {
 //     </div>
 //   );
 // }
-
