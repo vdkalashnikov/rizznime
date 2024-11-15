@@ -23,13 +23,13 @@ export default function App() {
 
   useEffect(() => {
     async function fetchAllData() {
-      await retryFetch(fetchSummerAnimes);
+      await retryFetch(() => fetchDataAnime(apiSummer, setSummerAnimes));
       await delay(1200);
-      await retryFetch(fetchTopAiringAnime);
+      await retryFetch(() => fetchDataAnime(apiTop, setTopAiringAnime));
       await delay(1200);
-      await retryFetch(fetchUpcomingAnime);
+      await retryFetch(() => fetchDataAnime(apiUpcoming, setUpcomingAnime));
       await delay(1200);
-      await retryFetch(fetchMostPopularAnime);
+      await retryFetch(() => fetchDataAnime(apiPopular, setMostPopularAnime));
     }
     fetchAllData();
   }, []);
@@ -77,10 +77,10 @@ export default function App() {
 
   async function fetchAllAnimeData() {
     const results = await Promise.allSettled([
-      retryFetch(fetchSummerAnimes),
-      retryFetch(fetchTopAiringAnime),
-      retryFetch(fetchUpcomingAnime),
-      retryFetch(fetchMostPopularAnime),
+      retryFetch(() => fetchDataAnime(apiSummer, setSummerAnimes)),
+      retryFetch(() => fetchDataAnime(apiTop, setTopAiringAnime)),
+      retryFetch(() => fetchDataAnime(apiUpcoming, setUpcomingAnime)),
+      retryFetch(() => fetchDataAnime(apiPopular, setMostPopularAnime)),
     ]);
 
     results.forEach((result, index) => {
@@ -95,6 +95,11 @@ export default function App() {
   useEffect(() => {
     fetchAllAnimeData();
   }, []);
+
+  const apiSummer = 'https://api.jikan.moe/v4/seasons/2024/summer'
+  const apiTop = 'https://api.jikan.moe/v4/top/anime?filter=airing'
+  const apiUpcoming = 'https://api.jikan.moe/v4/top/anime?filter=upcoming'
+  const apiPopular = 'https://api.jikan.moe/v4/top/anime?filter=bypopularity'
 
   async function fetchSummerAnimes() {
     try {
@@ -120,6 +125,19 @@ export default function App() {
     }
   }
 
+  const fetchDataAnime = async (api, setData) => {
+    try {
+      const response = await fetch(api)
+      if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.statusText}`)
+      }
+      const data = await response.json()
+      setData(data.data)
+    } catch (err) {
+      console.error('Error fetching: ', err)
+    }
+  }
+
   async function fetchTopAiringAnime() {
     try {
       const response = await fetch(
@@ -128,19 +146,6 @@ export default function App() {
       if (!response.ok)
         throw new Error(`Network response was not ok: ${response.statusText}`);
       const data = await response.json();
-      // if (data.data) {
-      //   const animeWithCharacters = [];
-      //   for (const anime of data.data) {
-      //     await retryFetch(async () => {
-      //       const characters = await fetchAnimeCharacters(anime.mal_id);
-      //       animeWithCharacters.push({ ...anime, characters });
-      //     });
-      //     await delay(1000);
-      //   }
-      //   setTopAiringAnime(animeWithCharacters);
-      // } else {
-      //   throw new Error('Invalid data structure');
-      // }
       setTopAiringAnime(data.data);
     } catch (error) {
       console.error("Error fetching top airing anime:", error);

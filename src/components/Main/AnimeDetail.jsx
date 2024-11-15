@@ -41,8 +41,8 @@ export default function AnimeDetail({ anime }) {
             {anime.characters.map((char) => (
               <>
               <li key={char.character.mal_id}>
-                {char.character.name} - {char.voice_actors.length > 0
-                  ? char.voice_actors.find(va => va.language === 'Japanese')?.person.name || 'Unknown'
+                {char.character.name.replace(',', '')} - {char.voice_actors.length > 0
+                  ? char.voice_actors.find(va => va.language === 'Japanese')?.person.name.replace(',', '') || 'Unknown'
                   : 'No voice actor info'}
               </li>
               <div className="modal-img">
