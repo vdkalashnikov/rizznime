@@ -425,38 +425,6 @@ body {
   }
 }
 
-
-/* MEDIA QUERY */
-
-/* @media (max-width: 760px) {
-  body{
-    display: flex;
-    width: 100%;
-    padding: 2rem;
-  }
-  .nav-bar {
-    width: 100%;
-  }
-  .nav-bar .search{
-    width: 100%;
-  }
-  .main {
-    
-    margin-top: 3rem;
-    max-height: 600px;
-  }
-  .main .box {
-    margin: auto;
-    width: 100%;
-    
-  }
-  .details img {
-    width: 40%;
-    height: 100%;
-    align-self: center;
-  }
-} */
-
 @media (max-height: 600px){
   .details{
     height: 30rem;
@@ -632,10 +600,6 @@ body {
   .main .box {
     max-width: 24rem;
     min-height: 30rem;
-    background-color: var(--color-background-100);
-    border-radius: 1rem;
-    overflow: scroll;
-    position: relative;
   }
 }
 @media (max-width:539px){
@@ -660,14 +624,9 @@ body {
     gap: 1rem;
   }
   .main .box {
-    
     max-width: 45rem;
     width: 100%;
     min-height: 30rem;
-    background-color: var(--color-background-100);
-    border-radius: 1rem;
-    overflow: scroll;
-    position: relative;
   }
   .main2 {
     margin-top: 2.4rem;
@@ -679,47 +638,17 @@ body {
     gap: 1rem;
   }
   .main2 .box {
-    
     max-width: 45rem;
     width: 100%;
     min-height: 30rem;
-    background-color: var(--color-background-100);
-    border-radius: 1rem;
-    overflow: scroll;
-    position: relative;
   }
 }
 @media (max-width:325px){
-  body{
-    display: flex;
-    width: 100%;
-    padding: 2rem;
-  }
-  .nav-bar {
-    width: 100%;
-  }
-  .nav-bar .search{
-    width: 100%;
-  }
-  .main {
-    margin-top: 2.4rem;
-    /* max-height: calc(100vh - 12rem - 3 * 5rem); */
-    max-height: 600px;
-    display: flex;
-    justify-content: center;
-   flex-wrap: wrap;
-    gap: 1rem;
-  }
-  .main .box {
-    
+  .main .box { 
     max-width: 28rem;
     width: 100%;
     min-width: 10rem;
     min-height: 30rem;
-    background-color: var(--color-background-100);
-    border-radius: 1rem;
-    overflow: scroll;
-    position: relative;
   }
   .main2 {
     margin-top: 2.4rem;
@@ -731,20 +660,9 @@ body {
     gap: 1rem;
   }
   .main2 .box {
-    
     max-width: 28rem;
     width: 100%;
     min-width: 10rem;
     min-height: 30rem;
-    background-color: var(--color-background-100);
-    border-radius: 1rem;
-    overflow: scroll;
-    position: relative;
   }
 }
-
-
-
-
-
-
