@@ -59,16 +59,12 @@ export default function App() {
   async function fetchAnimes(searchQuery) {
     try {
       const response = await fetch(`${apiUrl}?q=${searchQuery}`);
+      if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.statusText}`);
+      }
       const data = await response.json();
       if (data.data) {
-        const animePromises = data.data.map(async (anime) => {
-          const characters = await fetchAnimeCharacters(anime.mal_id);
-          return { ...anime, characters };
-        });
-        const animeWithCharacters = await Promise.all(animePromises);
-        setAnimes(animeWithCharacters);
-      } else {
-        throw new Error("Invalid data structure");
+        setAnimes(data.data);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -96,90 +92,23 @@ export default function App() {
     fetchAllAnimeData();
   }, []);
 
-  const apiSummer = 'https://api.jikan.moe/v4/seasons/2024/summer'
-  const apiTop = 'https://api.jikan.moe/v4/top/anime?filter=airing'
-  const apiUpcoming = 'https://api.jikan.moe/v4/top/anime?filter=upcoming'
-  const apiPopular = 'https://api.jikan.moe/v4/top/anime?filter=bypopularity'
-
-  async function fetchSummerAnimes() {
-    try {
-      const response = await fetch(
-        "https://api.jikan.moe/v4/seasons/2024/summer"
-      );
-      if (!response.ok)
-        throw new Error(`Network response was not ok: ${response.statusText}`);
-      const data = await response.json();
-      // if (data.data) {
-      //   const animePromises = data.data.map(async (anime) => {
-      //     const characters = await fetchAnimeCharacters(anime.mal_id);
-      //     return { ...anime, characters };
-      //   });
-      //   const animeWithCharacters = await Promise.all(animePromises);
-      //   setSummerAnimes(animeWithCharacters);
-      // } else {
-      //   throw new Error('Invalid data structure');
-      // }
-      setSummerAnimes(data.data);
-    } catch (error) {
-      console.error("Error fetching summer animes:", error);
-    }
-  }
+  const apiSummer = "https://api.jikan.moe/v4/seasons/2024/summer";
+  const apiTop = "https://api.jikan.moe/v4/top/anime?filter=airing";
+  const apiUpcoming = "https://api.jikan.moe/v4/top/anime?filter=upcoming";
+  const apiPopular = "https://api.jikan.moe/v4/top/anime?filter=bypopularity";
 
   const fetchDataAnime = async (api, setData) => {
     try {
-      const response = await fetch(api)
+      const response = await fetch(api);
       if (!response.ok) {
-        throw new Error(`Network response was not ok: ${response.statusText}`)
+        throw new Error(`Network response was not ok: ${response.statusText}`);
       }
-      const data = await response.json()
-      setData(data.data)
+      const data = await response.json();
+      setData(data.data);
     } catch (err) {
-      console.error('Error fetching: ', err)
+      console.error("Error fetching: ", err);
     }
-  }
-
-  async function fetchTopAiringAnime() {
-    try {
-      const response = await fetch(
-        "https://api.jikan.moe/v4/top/anime?filter=airing"
-      );
-      if (!response.ok)
-        throw new Error(`Network response was not ok: ${response.statusText}`);
-      const data = await response.json();
-      setTopAiringAnime(data.data);
-    } catch (error) {
-      console.error("Error fetching top airing anime:", error);
-    }
-  }
-
-  async function fetchUpcomingAnime() {
-    try {
-      const response = await fetch(
-        "https://api.jikan.moe/v4/top/anime?filter=upcoming"
-      );
-      if (!response.ok)
-        throw new Error(`Network response was not ok: ${response.statusText}`);
-      const data = await response.json();
-      setUpcomingAnime(data.data);
-    } catch (error) {
-      console.error("Error fetching upcoming anime:", error);
-    }
-  }
-
-  async function fetchMostPopularAnime() {
-    try {
-      const response = await fetch(
-        "https://api.jikan.moe/v4/top/anime?filter=bypopularity"
-      );
-      if (!response.ok)
-        throw new Error(`Network response was not ok: ${response.statusText}`);
-      const data = await response.json();
-      setMostPopularAnime(data.data);
-      console.log(data);
-    } catch (error) {
-      console.error("Error fetching upcoming anime:", error);
-    }
-  }
+  };
 
   async function fetchAnimeCharacters(malId) {
     try {
@@ -211,9 +140,13 @@ export default function App() {
     }
   }, [query]);
 
-  function handleSelectedAnime(id) {
+  async function handleSelectedAnime(id) {
     const newAnime = animes.find((anime) => anime.mal_id === id);
-    setSelectedAnime(newAnime);
+    const response = await fetchAnimeCharacters(id);
+    if (response.length > 0) {
+      const animeWithCharacters = {...newAnime, characters: response}
+      setSelectedAnime(animeWithCharacters)
+    }
     const modal = new bootstrap.Modal(
       document.getElementById("animeDetailModal")
     );
@@ -301,25 +234,3 @@ export default function App() {
     </>
   );
 }
-
-// function SummerAnimeList({ animes, onSelectedAnime }) {
-//   if (!animes || animes.length === 0) {
-//     return <div id="loading"><div className="loading-wave">
-//     <div className="loading-bar"></div>
-//     <div className="loading-bar"></div>
-//     <div className="loading-bar"></div>
-//     <div className="loading-bar"></div>
-//   </div></div>
-//   }
-
-//   return (
-//     <div className="summer-anime-list">
-//       <h2>Summer Anime 2024</h2>
-//       <ul className="list list-anime">
-//         {animes.map((anime) => (
-//           <Anime key={anime.mal_id} anime={anime} onSelectedAnime={onSelectedAnime} />
-//         ))}
-//       </ul>
-//     </div>
-//   );
-// }
